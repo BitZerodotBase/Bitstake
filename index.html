@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BitStake</title>
+  <link rel="stylesheet" href="core.css">
+  <link rel="icon" type="image/x-icon" sizes="3002x300" href="https://avatars.githubusercontent.com/u/236363013?v=4.jpg">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.0-rc.0/web3.min.js"></script>
+  <script src="bitstake.js"></script>
+  <script src="bitzero-wallet-modal.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo-container">
+        <h1 class="glitch" data-text="BitStake Validators">BitStake</h1>
+      </div>
+
+      <div class="wallet-section">
+        <select id="networkSwitcher" class="network-switcher">
+            <option value="8453">Base Mainnet</option>
+            <option value="84532">Base Sepolia</option>
+        </select>
+        <button id="connectWallet" onclick="openWalletModal()">[ Connect Wallet ]</button>
+        <div id="walletInfoDisplay" style="display: none;">
+          <span id="walletAddressDisplay"><em>...</em></span>
+          <button class="small-button static-button" onclick="copyWalletAddress()">Copy</button>
+          <button id="disconnectWallet" class="static-button" onclick="disconnectWallet()">Disconnect</button>
+        </div>
+      </div>
+    </header>
+
+    <p id="connectMessage" class="connect-message">Connect your wallet to delegate $BIT to a validator.</p>
+
+    <div id="stakingSection" style="display: none;">
+      <div class="grid-layout">
+
+        <div class="card terminal-card">
+          <div class="card-header">
+            <span class="card-title">C:\STAKE\OVERVIEW</span>
+          </div>
+          <div class="card-body">
+            <p>> Available: <span class="data-value" id="Balance">0.000000</span> BIT <span class="loading-spinner" id="balanceSpinner" style="display:none;"></span></p>
+            <p>> Delegated: <span class="data-value" id="totalStaked">0.000000</span> BIT <span class="loading-spinner" id="stakedSpinner" style="display:none;"></span></p>
+            <p>> Rate: <span id="rewardRateDisplay">N/A</span></p>
+            <p>> Contract Total: <span id="totalBitZeroInChain">0.000000</span> BIT <span class="loading-spinner" id="totalStakedSpinner" style="display:none;"></span></p>
+            <div class="progress-section">
+              <p>System Load (Staked/Supply): <span id="stakePercentDisplay">0.00%</span></p>
+              <div class="progress-bar-container">
+                <div id="stakeBar" class="progress-bar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card terminal-card">
+          <div class="card-header">
+            <span class="card-title">C:\DATA\ANALYTICS</span>
+          </div>
+          <div class="card-body">
+            <p class="reward-label">> Est. APR:</p>
+            <p class="reward-value"><span id="aprDisplay">0.00</span>% <span class="loading-spinner" id="aprSpinner" style="display:none;"></span></p>
+            <p>> TVL: <span class="data-value" id="tvlDisplay">0.00</span> BIT <span class="loading-spinner" id="tvlSpinner" style="display:none;"></span></p>
+            <p class="data-note" style="font-size: 0.8em; color: #888; margin-top: 15px;">APR is estimated based on current rewards and total staked amount.</p>
+          </div>
+        </div>
+        
+        <div class="card terminal-card">
+          <div class="card-header">
+            <span class="card-title">C:\REWARDS\CLAIM</span>
+          </div>
+          <div class="card-body">
+            <p class="reward-label">> Pending Reward:</p>
+            <p class="reward-value"><span id="pendingReward">0.000000</span> BIT <span class="loading-spinner" id="rewardSpinner" style="display:none;"></span></p>
+            <button id="claimRewardButton" class="scanline-button" onclick="claimReward()">[ Claim Reward ]</button>
+          </div>
+        </div>
+
+        <div class="card terminal-card">
+          <div class="card-header">
+            <span class="card-title">C:\STAKE\ACTIONS</span>
+          </div>
+          <div class="card-body">
+            <p>> Selected Validator: <strong id="selectedValidatorDisplay" style="color: #fff;">None</strong></p>
+            <label for="amountInput" style="margin-top: 10px;">> Enter Amount:</label>
+            <input type="number" id="amountInput" placeholder="0.0" min="0" step="any">
+            <div class="button-group percent-buttons">
+              <button onclick="setStakePercent(25)">25%</button>
+              <button onclick="setStakePercent(50)">50%</button>
+              <button onclick="setStakePercent(75)">75%</button>
+              <button id="stakeAllButton" onclick="delegateAllTokens()">MAX</button>
+            </div>
+             <div class="button-group percent-buttons">
+                <button id="unstakeAllButton" onclick="undelegateAllTokens()">Undelegate All</button>
+            </div>
+            <p id="estimatedReward" class="estimation-text">&nbsp;</p>
+            <div class="button-group action-buttons">
+              <button id="stakeButton" onclick="delegateOrApprove()">Delegate</button>
+              <button id="unstakeButton" onclick="undelegate()">Undelegate</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card terminal-card">
+          <div class="card-header">
+            <span class="card-title">C:\SYSTEM\PRICE</span>
+          </div>
+          <div class="card-body">
+            <p class="reward-label">> Current Price [BIT/USD]:</p>
+            <p class="reward-value">
+              $<span id="bitPriceDisplay" class="glitch-text" data-text="0.0000">0.0000</span>
+              <span class="loading-spinner" id="priceSpinner" style="display:none;"></span>
+            </p>
+            <p class="data-note" style="font-size: 0.8em; color: #888; margin-top: 15px;">Price feed is for informational purposes only.</p>
+          </div>
+        </div>
+
+        <div class="card terminal-card full-width">
+            <div class="card-header">
+                <span class="card-title">C:\SYSTEM\VALIDATORS</span>
+            </div>
+            <div class="card-body">
+                <p>> Select a validator to delegate your $BIT to:</p>
+                <div id="validatorList" class="validator-list">
+                    <p class="no-transactions">> Fetching validator list...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card terminal-card full-width">
+            <div class="card-header">
+                <span class="card-title">C:\GOVERNANCE\DAO</span>
+            </div>
+            <div class="card-body">
+                <label for="proposalSearch" style="margin-top: 10px;">> Search Proposals:</label>
+                <input type="text" id="proposalSearch" oninput="applyProposalFilter()" placeholder="Filter by ID, description, or proposer..." style="margin-bottom: 15px;">
+                
+                <div id="proposalList">
+                    <p class="no-transactions">> No active proposals.</p>
+                </div>
+                <button class="scanline-button" onclick="openProposalModal()">[ Create Proposal ]</button>
+            </div>
+        </div>
+
+        <div class="card terminal-card full-width">
+          <div class="card-header">
+            <span class="card-title">C:\LOGS\HISTORY</span>
+          </div>
+          <div class="card-body">
+            <div id="transactionHistory">
+                <p class="no-transactions">> No recent logs found.</p>
+            </div>
+            <button class="small-button static-button" onclick="clearTransactionHistory()">Clear Logs</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="loader" class="loader-container">
+    <div class="spinner"></div>
+    <p id="loaderMessage">Loading...</p>
+    
+    <p id="binaryAnimation" class="binarybit"></p>
+</div>
+    
+    <div id="tx-toast-container"></div>
+
+    <div id="proposalModal" class="modal">
+        <div class="modal-content terminal-card">
+            <div class="card-header">
+                <span class="card-title">C:\DAO\CREATE_PROPOSAL</span>
+                <span class="close-button" onclick="closeProposalModal()">&times;</span>
+            </div>
+            <div class="card-body">
+                <label for="proposalInput">> Proposal Description:</label>
+                <textarea id="proposalInput" rows="4" placeholder="Describe your proposal..."></textarea>
+                <button id="submitProposalButton" class="scanline-button" onclick="createProposal()">Submit Proposal</button>
+            </div>
+            <p>To make a proposal at least stake 100,000.00 BIT</p>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <button class="static-button add-token-btn" onclick="addToken()"><img src="images/metamask.png" width="15px"> Add BitZero to Wallet</button>
+        <p>Powered by BitZero</p>
+    </footer>
+  </div>
+
+</body>
+</html>
