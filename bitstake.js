@@ -1547,9 +1547,19 @@ window.onclick = function(event) {
 }
 
 async function connectMetaMask() {
-    if (typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask) {
-        await connectSpecificWallet(window.ethereum);
-    } else {
+    if (typeof window.ethereum !== 'undefined') {
+        let provider = window.ethereum;
+        if (window.ethereum.providers) {
+            provider = window.ethereum.providers.find(p => p.isMetaMask) || window.ethereum;
+        }
+        await connectSpecificWallet(provider);
+    } 
+    else if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        const currentUrl = window.location.host + window.location.pathname;
+        const deepLink = 'https://metamask.app.link/dapp/' + currentUrl;
+        window.location.href = deepLink;
+    } 
+    else {
         window.open('https://metamask.io/download/', '_blank');
         showTxNotification(null, 'MetaMask is not installed. Please follow the link to install it.', true);
     }
@@ -1567,7 +1577,6 @@ async function connectBitget() {
     else if (typeof window.ethereum !== 'undefined' && (window.ethereum.isBitKeep || window.ethereum.isBitget)) {
         provider = window.ethereum;
     }
-
     if (provider) {
         try {
             await connectSpecificWallet(provider);
@@ -1575,7 +1584,14 @@ async function connectBitget() {
             console.error("Bitget connection error:", error);
             showTxNotification(null, 'Error connecting to Bitget: ' + error.message, true);
         }
-    } else {
+    } 
+    else if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        const currentUrl = window.location.href;
+        const deepLink = 'https://bkcode.vip?action=dapp&url=' + encodeURIComponent(currentUrl);
+
+        window.location.href = deepLink;
+    } 
+    else {
         window.open('https://web3.bitget.com/en/wallet-download', '_blank');
         showTxNotification(null, 'Bitget Wallet is not detected. Please install it.', true);
     }
